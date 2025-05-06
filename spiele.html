@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Meine Spieleseite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+    nav button {
+      margin: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+    }
+    .spiel {
+      display: none;
+      margin-top: 30px;
+    }
+    canvas {
+      border: 2px solid black;
+      background-color: white;
+    }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+    }
+    td {
+      width: 60px;
+      height: 60px;
+      font-size: 36px;
+      text-align: center;
+      border: 1px solid black;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Meine Spieleseite</h1>
+  <nav>
+    <button onclick="zeigeSpiel('fang')">Fang das Quadrat</button>
+    <button onclick="zeigeSpiel('tic')">Tic Tac Toe</button>
+    <button onclick="zeigeSpiel('snake')">Snake</button>
+  </nav>
+
+  <!-- Fang das Quadrat -->
+  <div id="fang" class="spiel">
+    <h2>Fang das Quadrat</h2>
+    <canvas id="canvasFang" width="300" height="300"></canvas>
+    <p>Punkte: <span id="punkteFang">0</span></p>
+  </div>
+
+  <!-- Tic Tac Toe -->
+  <div id="tic" class="spiel">
+    <h2>Tic Tac Toe</h2>
+    <table id="spielfeld"></table>
+    <p id="ticStatus">Spieler X ist am Zug</p>
+  </div>
+
+  <!-- Snake -->
+  <div id="snake" class="spiel">
+    <h2>Snake</h2>
+    <canvas id="snakeCanvas" width="300" height="300"></canvas>
+    <p>Steuerung: Pfeiltasten (iPad: mit Tastatur)</p>
+  </div>
+
+  <script>
+    // Spielumschaltung
+    function zeigeSpiel(name) {
+      document.querySelectorAll('.spiel').forEach(s => s.style.display = 'none');
+      document.getElementById(name).style.display = 'block';
+    }
+
+    // Fang das Quadrat
+    const canvasFang = document.getElementById('canvasFang');
+    const ctxFang = canvasFang.getContext('2d');
+    let punkteFang = 0;
+    function neuesQuadrat() {
+      const x = Math.random() * 250;
+      const y = Math.random() * 250;
+      ctxFang.clearRect(0, 0, 300, 300);
+      ctxFang.fillStyle = 'red';
+      ctxFang.fillRect(x, y, 50, 50);
+      canvasFang.onclick = function(e) {
+        if (e.offsetX >= x && e.offsetX <= x+50 && e.offsetY >= y && e.offsetY <= y+50) {
+          punkteFang++;
+          document.getElementById('punkteFang').textContent = punkteFang;
+          neuesQuadrat();
+        }
+      };
+    }
+    neuesQuadrat();
+
+    // Tic Tac Toe
+    const feld = document.getElementById("spielfeld");
+    const status = document.getElementById("ticStatus");
+    let aktuellerSpieler = "X";
+    let spielfeld = Array(9).fill("");
+
+    function erstelleFeld() {
+      feld.innerHTML = "";
+      for (let i = 0; i < 3; i++) {
+        let tr = document.createElement("tr");
+        for (let j = 0; j < 3; j++) {
+          let td = document.createElement("td");
+          let index = i * 3 + j;
+          td.textContent = spielfeld[index];
+          td.onclick = () => macheZug(index, td);
+          tr.appendChild(td);
+        }
+        feld.appendChild(tr);
+      }
+    }
+
+    function macheZug(index, td) {
+      if (spielfeld[index] === "") {
+        spielfeld[index] = aktuellerSpieler;
+        td.textContent = aktuellerSpieler;
+        if (pruefeSieg()) {
+          status.textContent = `Spieler ${aktuellerSpieler} gewinnt!`;
+        } else if (!spielfeld.includes("")) {
+          status.textContent = "Unentschieden!";
+        } else {
+          aktuellerSpieler = aktuellerSpieler === "X" ? "O" : "X";
+          status.textContent = `Spieler ${aktuellerSpieler} ist am Zug`;
+        }
+      }
+    }
+
+    function pruefeSieg() {
+      const kombis = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      return kombis.some(k => spielfeld[k[0]] && spielfeld[k[0]] === spielfeld[k[1]] && spielfeld[k[1]] === spielfeld[k[2]]);
+    }
+
+    erstelleFeld();
+
+    // Snake
+    const canvasSnake = document.getElementById("snakeCanvas");
+    const ctxSnake = canvasSnake.getContext("2d");
+    let snake = [{x: 150, y:150}];
+    let richtung = {x:10, y:0};
+    let essen = {x: 100, y: 100};
+
+    function zeichneSnake() {
+      ctxSnake.clearRect(0, 0, 300, 300);
+      ctxSnake.fillStyle = "green";
+      snake.forEach(segment => ctxSnake.fillRect(segment.x, segment.y, 10, 10));
+      ctxSnake.fillStyle = "red";
+      ctxSnake.fillRect(essen.x, essen.y, 10, 10);
+    }
+
+    function update() {
+      let kopf = {x: snake[0].x + richtung.x, y: snake[0].y + richtung.y};
+      snake.unshift(kopf);
+      if (kopf.x === essen.x && kopf.y === essen.y) {
+        essen = {
+          x: Math.floor(Math.random() * 30) * 10,
+          y: Math.floor(Math.random() * 30) * 10
+        };
+      } else {
+        snake.pop();
+      }
+      zeichneSnake();
+    }
+
+   
